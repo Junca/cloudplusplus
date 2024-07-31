@@ -1,14 +1,15 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    kotlin("plugin.serialization")
 }
 
 android {
-    namespace = "nl.cloudplusplus.Evaluation"
+    namespace = "nl.cloudplusplus.evaluation"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "nl.cloudplusplus.Evaluation"
+        applicationId = "nl.cloudplusplus.evaluation"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -36,7 +37,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -45,4 +45,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation(libs.androidx.sqlite.ktx)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }

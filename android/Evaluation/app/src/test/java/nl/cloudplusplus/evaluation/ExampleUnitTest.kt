@@ -1,4 +1,4 @@
-package nl.cloudplusplus.Evaluation
+package nl.cloudplusplus.evaluation
 
 import org.junit.Test
 

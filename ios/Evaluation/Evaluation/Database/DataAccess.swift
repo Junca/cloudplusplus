@@ -152,16 +152,8 @@ class DataAccess {
                 guard let queryResults2 = try? db.prepare("SELECT * FROM defaultFields WHERE defaultFormId=\(row[0] as! Int64)") else { return nil }
                 for row2 in queryResults2 {
                     
-                    //print(row2[0] as! Int64)
-                    //print("SELECT * FROM defaultOptionsField WHERE defaultFieldId=\(row2[0] as! Int64)")
-
-                    
                     guard let queryResults3 = try? db.prepare("SELECT * FROM defaultOptionsField WHERE defaultFieldId=\(row2[0] as! Int64)") else { return nil }
                     for row3 in queryResults3 {
-                        
-                        //print("option")
-                        //print(row3)
-                        
                         options.append(Option(label: row3[2] as! String, value: row3[3] as! String))
                     }
 
