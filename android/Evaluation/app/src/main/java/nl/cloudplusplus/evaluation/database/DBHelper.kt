@@ -2,10 +2,12 @@ package nl.cloudplusplus.evaluation.database
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import nl.cloudplusplus.evaluation.models.Field
+import nl.cloudplusplus.evaluation.models.Form
+import nl.cloudplusplus.evaluation.models.Option
+import nl.cloudplusplus.evaluation.models.Record
 import nl.cloudplusplus.evaluation.models.Section
 
 class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
@@ -13,55 +15,28 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
 
     override fun onCreate(db: SQLiteDatabase) {
 
-        var query = ("CREATE TABLE " + TABLE_DEFAULT_FORM + " ("
-                + ID_DEFAULT_FORM + " INTEGER PRIMARY KEY, " +
-                TITLE_DEFAULT_FORM + " TEXT" +
-                ")")
+        var query =
+            ("CREATE TABLE $TABLE_DEFAULT_FORM ($ID_DEFAULT_FORM INTEGER PRIMARY KEY, $TITLE_DEFAULT_FORM TEXT)")
         db.execSQL(query)
 
-        query = ("CREATE TABLE " + TABLE_DEFAULT_SECTION + " ("
-                + ID_DEFAULT_SECTION + " INTEGER PRIMARY KEY, " +
-                ID_FORM_DEFAULT_DEFAULT_SECTION + " INTEGER," +
-                TITLE_DEFAULT_SECTION + " TEXT," +
-                FROM_DEFAULT_SECTION + " INTEGER," +
-                TO_DEFAULT_SECTION + " INTEGER," +
-                INDEX_DEFAULT_SECTION + " INTEGER," +
-                UUID_DEFAULT_SECTION + " TEXT" +
-                ")")
+        query =
+            ("CREATE TABLE $TABLE_DEFAULT_SECTION ($ID_DEFAULT_SECTION INTEGER PRIMARY KEY, $ID_FORM_DEFAULT_DEFAULT_SECTION INTEGER,$TITLE_DEFAULT_SECTION TEXT,$FROM_DEFAULT_SECTION INTEGER,$TO_DEFAULT_SECTION INTEGER,$INDEX_DEFAULT_SECTION INTEGER,$UUID_DEFAULT_SECTION TEXT)")
         db.execSQL(query)
 
-        query = ("CREATE TABLE " + TABLE_DEFAULT_FIELD + " ("
-                + ID_DEFAULT_FIELD + " INTEGER PRIMARY KEY, " +
-                ID_FORM_DEFAULT_DEFAULT_FIELD + " INTEGER," +
-                TYPE_DEFAULT_FIELD + " TEXT," +
-                LABEL_DEFAULT_FIELD + " TEXT," +
-                NAME_DEFAULT_FIELD + " TEXT," +
-                REQUIRED_DEFAULT_FIELD + " INTEGER," +
-                UUID_DEFAULT_FIELD + " TEXT" +
-                ")")
+        query =
+            ("CREATE TABLE $TABLE_DEFAULT_FIELD ($ID_DEFAULT_FIELD INTEGER PRIMARY KEY, $ID_FORM_DEFAULT_DEFAULT_FIELD INTEGER,$TYPE_DEFAULT_FIELD TEXT,$LABEL_DEFAULT_FIELD TEXT,$NAME_DEFAULT_FIELD TEXT,$REQUIRED_DEFAULT_FIELD INTEGER,$UUID_DEFAULT_FIELD TEXT)")
         db.execSQL(query)
 
-        query = ("CREATE TABLE " + TABLE_DEFAULT_OPTION_FIELD + " ("
-                + ID_DEFAULT_OPTION_FIELD + " INTEGER PRIMARY KEY, " +
-                ID_FIELD_DEFAULT_DEFAULT_OPTION_FIELD + " INTEGER," +
-                LABEL_DEFAULT_OPTION_FIELD + " TEXT," +
-                VALUE_DEFAULT_OPTION_FIELD + " TEXT" +
-                ")")
+        query =
+            ("CREATE TABLE $TABLE_DEFAULT_OPTION_FIELD ($ID_DEFAULT_OPTION_FIELD INTEGER PRIMARY KEY, $ID_FIELD_DEFAULT_DEFAULT_OPTION_FIELD INTEGER,$LABEL_DEFAULT_OPTION_FIELD TEXT,$VALUE_DEFAULT_OPTION_FIELD TEXT)")
         db.execSQL(query)
 
-        query = ("CREATE TABLE " + TABLE_FORM + " ("
-                + ID_FORM + " INTEGER PRIMARY KEY, " +
-                ID_FORM_DEFAULT_FORM + " INTEGER," +
-                TITLE_FORM + " TEXT" +
-                ")")
+        query =
+            ("CREATE TABLE $TABLE_FORM ($ID_FORM INTEGER PRIMARY KEY, $ID_FORM_DEFAULT_FORM INTEGER,$TITLE_FORM TEXT)")
         db.execSQL(query)
 
-        query = ("CREATE TABLE " + TABLE_FIELD + " ("
-                + ID_FIELD + " INTEGER PRIMARY KEY, " +
-                ID_FORM_FIELD + " INTEGER," +
-                ID_FIELD_FIELD + " INTEGER," +
-                VALUE_FIELD + " TEXT" +
-                ")")
+        query =
+            ("CREATE TABLE $TABLE_FIELD ($ID_FIELD INTEGER PRIMARY KEY, $ID_FORM_FIELD INTEGER,$ID_FIELD_FIELD INTEGER,$VALUE_FIELD TEXT)")
         db.execSQL(query)
     }
 
@@ -77,9 +52,11 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
 
     fun needImportJSON(): Boolean {
         val db = this.readableDatabase
+        var hasRow: Boolean = false
         val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_DEFAULT_FORM", null)
-        cursor!!.moveToFirst()
-        val hasRow = cursor.getInt(0) == 0
+        if (cursor!!.moveToFirst()) {
+            hasRow = cursor.getInt(0) == 0
+        }
         cursor.close()
 
         return hasRow
@@ -143,13 +120,209 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         db.close()
     }
 
-    fun getAllForms(): Cursor? {
+    fun getDefaultForm(id: Int): Form? {
+
+        val form: Form
+        var sections: Array<Section> = arrayOf()
+        var fields: Array<Field> = arrayOf()
+        var options: Array<Option> = arrayOf()
+
         val db = this.readableDatabase
-        return db.rawQuery("SELECT * FROM $TABLE_DEFAULT_FORM", null)
+
+        var cursor = db.rawQuery("SELECT * FROM $TABLE_DEFAULT_FORM WHERE id=$id", null)
+        if (cursor!!.moveToFirst()) {
+
+            form = Form(id = cursor.getInt(0), title = cursor.getString(1))
+            cursor.close()
+
+            cursor =
+                db.rawQuery("SELECT * FROM $TABLE_DEFAULT_SECTION WHERE defaultFormId=$id", null)
+            if (cursor!!.moveToFirst()) {
+                sections += Section(
+                    title = cursor.getString(2),
+                    from = cursor.getInt(3),
+                    to = cursor.getInt(4),
+                    index = cursor.getInt(5),
+                    uuid = cursor.getString(6)
+                )
+
+                while (cursor.moveToNext()) {
+                    sections += Section(
+                        title = cursor.getString(2),
+                        from = cursor.getInt(3),
+                        to = cursor.getInt(4),
+                        index = cursor.getInt(5),
+                        uuid = cursor.getString(6)
+                    )
+                }
+                cursor.close()
+            }
+
+            cursor = db.rawQuery("SELECT * FROM $TABLE_DEFAULT_FIELD WHERE defaultFormId=$id", null)
+            if (cursor!!.moveToFirst()) {
+
+                var cursor2 = db.rawQuery(
+                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(0)",
+                    null
+                )
+                if (cursor2!!.moveToFirst()) {
+                    options += Option(label = cursor2.getString(2), value = cursor2.getString(3))
+                    while (cursor2.moveToNext()) {
+                        options += Option(
+                            label = cursor2.getString(2), value = cursor2.getString(3)
+                        )
+                    }
+                }
+                cursor2.close()
+
+                fields += Field(
+                    type = cursor.getString(2),
+                    label = cursor.getString(3),
+                    name = cursor.getString(4),
+                    required = cursor.getInt(5) == 1,
+                    uuid = cursor.getString(6),
+                    options = options
+                )
+
+                while (cursor.moveToNext()) {
+
+                    options = arrayOf()
+                    cursor2 = db.rawQuery(
+                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(0)",
+                        null
+                    )
+                    if (cursor2!!.moveToFirst()) {
+                        options += Option(
+                            label = cursor2.getString(2), value = cursor2.getString(3)
+                        )
+                        while (cursor2.moveToNext()) {
+                            options += Option(
+                                label = cursor2.getString(2), value = cursor2.getString(3)
+                            )
+                        }
+                    }
+                    cursor2.close()
+
+                    fields += Field(
+                        type = cursor.getString(2),
+                        label = cursor.getString(3),
+                        name = cursor.getString(4),
+                        required = cursor.getInt(5) == 1,
+                        uuid = cursor.getString(6),
+                        options = options
+                    )
+                }
+                cursor.close()
+            }
+
+            form.sections = sections
+            form.fields = fields
+            return form
+        }
+        db.close()
+
+        return null
     }
 
-    
+    fun getAllForms(): Array<Form> {
 
+        var forms: Array<Form> = arrayOf()
+        val db = this.readableDatabase
+
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_DEFAULT_FORM", null)
+        if (cursor!!.moveToFirst()) {
+            forms += Form(id = cursor.getInt(0), title = cursor.getString(1))
+
+            while (cursor.moveToNext()) {
+                forms += Form(id = cursor.getInt(0), title = cursor.getString(1))
+            }
+        }
+        cursor.close()
+        db.close()
+
+        return forms
+    }
+
+    fun getAllEntries(): Array<Record> {
+
+        var records: Array<Record> = arrayOf()
+        val db = this.readableDatabase
+
+        val cursor = db.rawQuery(
+            "SELECT $TABLE_FORM.id, $TABLE_FORM.defaultFormId, $TABLE_DEFAULT_FORM.title, $TABLE_FORM.title FROM $TABLE_FORM INNER JOIN $TABLE_DEFAULT_FORM WHERE $TABLE_FORM.defaultFormId = $TABLE_DEFAULT_FORM.id",
+            null
+        )
+        if (cursor!!.moveToFirst()) {
+            records += Record(
+                id = cursor.getInt(0),
+                defaultFormId = cursor.getInt(1),
+                form = cursor.getString(2),
+                title = cursor.getString(3)
+            )
+
+            while (cursor.moveToNext()) {
+                records += Record(
+                    id = cursor.getInt(0),
+                    defaultFormId = cursor.getInt(1),
+                    form = cursor.getString(2),
+                    title = cursor.getString(3)
+                )
+            }
+        }
+        cursor.close()
+        db.close()
+
+        return records
+    }
+
+    fun getEntrieById(id: Int): Record? {
+        var record: Record
+        val db = this.readableDatabase
+
+
+        db.close()
+
+        return null
+    }
+
+    fun saveEntrie(record: Record): Record {
+        var savedRecord: Record = record
+        val db = this.writableDatabase
+
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_FORM WHERE id=record.id", null)
+        if (cursor!!.moveToFirst()) {
+
+            var values = ContentValues()
+            values.put(TITLE_FORM, record.title)
+            val id = db.insert(TABLE_FORM, null, values)
+
+            record.fields?.forEach { field ->
+
+                values = ContentValues()
+                values.put(ID_FORM_FIELD, id)
+                values.put(ID_FIELD_FIELD, field.id)
+                values.put(VALUE_FIELD, field.value)
+                db.insert(TABLE_FIELD, null, values)
+            }
+
+        } else {
+
+            var values = ContentValues()
+            values.put(TITLE_FORM, record.title)
+            db.update(TABLE_FORM, values, "id=?", arrayOf(record.id.toString()))
+
+            record.fields?.forEach { field ->
+
+                values = ContentValues()
+                values.put(VALUE_FIELD, field.value)
+                db.update(TABLE_FIELD, values, "id=?", arrayOf(field.id.toString()))
+            }
+        }
+        cursor.close()
+        db.close()
+
+        return savedRecord
+    }
 
     companion object {
         private const val DATABASE_NAME = "EVALUATION"
