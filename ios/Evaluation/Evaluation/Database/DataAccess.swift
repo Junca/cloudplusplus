@@ -178,11 +178,11 @@ class DataAccess {
         return forms
     }
     
-    func getAllEntries() throws -> [Record] {
+    func getAllEntries(_ id: Int64) throws -> [Record] {
         let db = try Connection(fileName())
         var records : [Record] = []
         do {
-            guard let queryResults = try? db.prepare("SELECT forms.id, forms.defaultFormId,  defaultForms.title, forms.title FROM forms INNER JOIN defaultForms WHERE forms.defaultFormId = defaultForms.id") else { return [] }
+            guard let queryResults = try? db.prepare("SELECT forms.id, forms.defaultFormId,  defaultForms.title, forms.title FROM forms INNER JOIN defaultForms WHERE forms.defaultFormId = defaultForms.id AND defaultForms.id=\(id)") else { return [] }
             for row in queryResults {
                 records.append(Record(id: row[0] as? Int64, defaultFormId: row[1] as! Int64, form: row[2] as? String, title: row[3] as? String))
             }
@@ -207,7 +207,7 @@ class DataAccess {
                 guard let queryResults1 = try? db.prepare("SELECT * FROM fields INNER JOIN defaultFields WHERE fields.fieldId=defaultFields.id AND fields.formId=\(id)") else { return nil }
                 for row1 in queryResults1 {
                     
-                    guard let queryResults2 = try? db.prepare("SELECT * FROM defaultOptionsField WHERE defaultFieldId=\(row1[0] as! Int64)") else { return nil }
+                    guard let queryResults2 = try? db.prepare("SELECT * FROM defaultOptionsField WHERE defaultFieldId=\(row1[2] as! Int64)") else { return nil }
                     for row2 in queryResults2 {
                         options.append(Option(label: row2[2] as! String, value: row2[3] as! String))
                     }

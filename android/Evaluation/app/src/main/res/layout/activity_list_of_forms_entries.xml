@@ -2,23 +2,39 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+    android:id="@+id/list_of_form_entries"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".activities.ListOfFormsEntries">
 
-    <TextView
-        style="@style/table_header"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/_30sdp"
-        android:layout_weight="1"
-        android:textAlignment="textStart"
-        android:layout_gravity="center_horizontal"
-        android:gravity="start"
-        android:background="@color/white"
-        android:text="@string/list_of_forms"
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            style="@style/table_header"
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/list_of_form_entries"
+            android:layout_gravity="start"/>
+
+        <TextView
+            style="@style/table_header"
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="textEnd"
+            android:layout_marginEnd="20dp"
+            android:text="@string/new_entry"
+            android:layout_gravity="end"
+            android:textStyle="normal" />
+
+    </LinearLayout>
 
     <TableLayout
         android:id="@+id/table_heading_layout"
@@ -28,11 +44,10 @@
         android:layout_marginTop="@dimen/_20sdp"
         android:layout_marginEnd="@dimen/_4sdp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-    </TableLayout>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/table_recycler_view"
+        android:id="@+id/table_recycler_view2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"

@@ -48,4 +48,8 @@ dependencies {
 
     implementation(libs.androidx.sqlite.ktx)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    implementation(libs.ssp.android)
+    implementation(libs.sdp.android)
+    implementation(libs.androidx.recyclerview)
 }

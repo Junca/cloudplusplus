@@ -23,13 +23,12 @@ class ListOfFormEntriesViewController: UITableViewController {
         super.viewDidLoad()
         
         do {
-            self.records = try dataAccess.getAllEntries()
+            self.records = try dataAccess.getAllEntries((selectedForm?.id)!)
         } catch {
             print(error)
         }
-        self.tableView.reloadData()
     }
-    
+        
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }

@@ -120,7 +120,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         db.close()
     }
 
-    fun getDefaultForm(id: Int): Form? {
+    private fun getDefaultForm(id: Int): Form? {
 
         val form: Form
         var sections: Array<Section> = arrayOf()
@@ -243,13 +243,13 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         return forms
     }
 
-    fun getAllEntries(): Array<Record> {
+    fun getAllEntries(id: Int): Array<Record> {
 
         var records: Array<Record> = arrayOf()
         val db = this.readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT $TABLE_FORM.id, $TABLE_FORM.defaultFormId, $TABLE_DEFAULT_FORM.title, $TABLE_FORM.title FROM $TABLE_FORM INNER JOIN $TABLE_DEFAULT_FORM WHERE $TABLE_FORM.defaultFormId = $TABLE_DEFAULT_FORM.id",
+            "SELECT $TABLE_FORM.id, $TABLE_FORM.defaultFormId, $TABLE_DEFAULT_FORM.title, $TABLE_FORM.title FROM $TABLE_FORM INNER JOIN $TABLE_DEFAULT_FORM WHERE $TABLE_FORM.defaultFormId = $TABLE_DEFAULT_FORM.id AND $TABLE_DEFAULT_FORM.id=$id",
             null
         )
         if (cursor!!.moveToFirst()) {
@@ -279,7 +279,99 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         var record: Record
         val db = this.readableDatabase
 
+        var cursor = db.rawQuery("SELECT * FROM $TABLE_FORM WHERE id=id", null)
+        if (cursor!!.moveToFirst()) {
 
+            val idForm = cursor.getInt(0)
+            val defaultFormId = cursor.getInt(1)
+            val titleForm = cursor.getString(2)
+            val form : Form? = getDefaultForm(defaultFormId)
+
+            cursor.close()
+
+            var fields: Array<Field> = arrayOf()
+            var options: Array<Option>
+
+            cursor = db.rawQuery(
+                "SELECT * FROM $TABLE_FIELD INNER JOIN $TABLE_DEFAULT_FIELD WHERE $TABLE_FIELD.fieldId = $TABLE_DEFAULT_FIELD.id",
+                null
+            )
+            if (cursor!!.moveToFirst()) {
+
+                options = arrayOf()
+                var cursor2 = db.rawQuery(
+                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(2)",
+                    null
+                )
+                if (cursor2!!.moveToFirst()) {
+                    options += Option(
+                        label = cursor2.getString(2), value = cursor2.getString(3)
+                    )
+                    while (cursor2.moveToNext()) {
+                        options += Option(
+                            label = cursor2.getString(2), value = cursor2.getString(3)
+                        )
+                    }
+                }
+                cursor2.close()
+
+                fields += Field(
+                    type = cursor.getString(2),
+                    label = cursor.getString(3),
+                    name = cursor.getString(4),
+                    required = cursor.getInt(5) == 1,
+                    uuid = cursor.getString(6),
+                    options = options,
+                    fieldId = cursor.getInt(0),
+                    value = cursor.getString(3)
+                )
+
+                while (cursor.moveToNext()) {
+
+                    options = arrayOf()
+                    cursor2 = db.rawQuery(
+                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(2)",
+                        null
+                    )
+                    if (cursor2!!.moveToFirst()) {
+                        options += Option(
+                            label = cursor2.getString(2), value = cursor2.getString(3)
+                        )
+                        while (cursor2.moveToNext()) {
+                            options += Option(
+                                label = cursor2.getString(2), value = cursor2.getString(3)
+                            )
+                        }
+                    }
+                    cursor2.close()
+
+                    fields += Field(
+                        type = cursor.getString(2),
+                        label = cursor.getString(3),
+                        name = cursor.getString(4),
+                        required = cursor.getInt(5) == 1,
+                        uuid = cursor.getString(6),
+                        options = options,
+                        fieldId = cursor.getInt(0),
+                        value = cursor.getString(3)
+                    )
+                }
+            }
+            cursor.close()
+            db.close()
+
+            if (form != null) {
+                return Record(
+                    id = idForm,
+                    defaultFormId = defaultFormId,
+                    form = form.title,
+                    title = titleForm,
+                    sections = form.sections,
+                    fields = form.fields
+                )
+            }
+        }
+        cursor.close()
         db.close()
 
         return null
