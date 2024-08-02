@@ -1,7 +1,7 @@
 package nl.cloudplusplus.evaluation.activities
 
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +17,7 @@ class ListOfFormsEntries : AppCompatActivity() {
 
     private lateinit var tableRecyclerView: RecyclerView
     private lateinit var tableRowAdapter: ListOfFormEntriesTableRowAdapter
+    private var id = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +25,6 @@ class ListOfFormsEntries : AppCompatActivity() {
         setContentView(R.layout.activity_list_of_forms_entries)
 
         val b = intent.extras
-        var id = 0
         if (b != null) id = b.getInt("id")
 
         val db = DBHelper(this, null)
@@ -43,9 +43,26 @@ class ListOfFormsEntries : AppCompatActivity() {
     }
 
     fun clickHandlerCell(view: View) {
-        Log.v("CLICK", view.getTag().toString())
-
-
+        val intent: Intent = Intent(
+            this@ListOfFormsEntries,
+            Entrie::class.java
+        )
+        val b = Bundle()
+        b.putInt("id", view.tag.toString().toInt())
+        intent.putExtras(b)
+        startActivity(intent)
+        finish()
     }
 
+    fun clickHandlerNewEntrie(view: View) {
+        val intent: Intent = Intent(
+            this@ListOfFormsEntries,
+            Entrie::class.java
+        )
+        val b = Bundle()
+        b.putInt("defaultFormId", id)
+        intent.putExtras(b)
+        startActivity(intent)
+        finish()
+    }
 }

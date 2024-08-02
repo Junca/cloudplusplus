@@ -120,12 +120,12 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         db.close()
     }
 
-    private fun getDefaultForm(id: Int): Form? {
+    fun getDefaultForm(id: Int): Form {
 
-        val form: Form
         var sections: Array<Section> = arrayOf()
         var fields: Array<Field> = arrayOf()
         var options: Array<Option> = arrayOf()
+        var form = Form(id = 0, title = "", fields = fields, sections = sections)
 
         val db = this.readableDatabase
 
@@ -161,8 +161,10 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             cursor = db.rawQuery("SELECT * FROM $TABLE_DEFAULT_FIELD WHERE defaultFormId=$id", null)
             if (cursor!!.moveToFirst()) {
 
+                var fieldId = cursor.getInt(0)
+
                 var cursor2 = db.rawQuery(
-                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(0)",
+                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$fieldId",
                     null
                 )
                 if (cursor2!!.moveToFirst()) {
@@ -176,6 +178,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
                 cursor2.close()
 
                 fields += Field(
+                    id = cursor.getInt(0),
                     type = cursor.getString(2),
                     label = cursor.getString(3),
                     name = cursor.getString(4),
@@ -186,9 +189,10 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
 
                 while (cursor.moveToNext()) {
 
+                    fieldId = cursor.getInt(0)
                     options = arrayOf()
                     cursor2 = db.rawQuery(
-                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(0)",
+                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$fieldId",
                         null
                     )
                     if (cursor2!!.moveToFirst()) {
@@ -221,7 +225,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         }
         db.close()
 
-        return null
+        return form
     }
 
     fun getAllForms(): Array<Form> {
@@ -276,21 +280,20 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
     }
 
     fun getEntrieById(id: Int): Record? {
-        var record: Record
         val db = this.readableDatabase
 
-        var cursor = db.rawQuery("SELECT * FROM $TABLE_FORM WHERE id=id", null)
+        var cursor = db.rawQuery("SELECT * FROM $TABLE_FORM WHERE id=$id", null)
         if (cursor!!.moveToFirst()) {
 
             val idForm = cursor.getInt(0)
             val defaultFormId = cursor.getInt(1)
             val titleForm = cursor.getString(2)
-            val form : Form? = getDefaultForm(defaultFormId)
-
-            cursor.close()
+            val form : Form = getDefaultForm(defaultFormId)
 
             var fields: Array<Field> = arrayOf()
             var options: Array<Option>
+
+            cursor.close()
 
             cursor = db.rawQuery(
                 "SELECT * FROM $TABLE_FIELD INNER JOIN $TABLE_DEFAULT_FIELD WHERE $TABLE_FIELD.fieldId = $TABLE_DEFAULT_FIELD.id",
@@ -299,8 +302,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             if (cursor!!.moveToFirst()) {
 
                 options = arrayOf()
+                var fieldId = cursor.getInt(2)
                 var cursor2 = db.rawQuery(
-                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(2)",
+                    "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$fieldId",
                     null
                 )
                 if (cursor2!!.moveToFirst()) {
@@ -316,11 +320,11 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
                 cursor2.close()
 
                 fields += Field(
-                    type = cursor.getString(2),
-                    label = cursor.getString(3),
-                    name = cursor.getString(4),
-                    required = cursor.getInt(5) == 1,
-                    uuid = cursor.getString(6),
+                    type = cursor.getString(6),
+                    label = cursor.getString(7),
+                    name = cursor.getString(8),
+                    required = cursor.getInt(9) == 1,
+                    uuid = cursor.getString(10),
                     options = options,
                     fieldId = cursor.getInt(0),
                     value = cursor.getString(3)
@@ -329,8 +333,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
                 while (cursor.moveToNext()) {
 
                     options = arrayOf()
+                    fieldId = cursor.getInt(2)
                     cursor2 = db.rawQuery(
-                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$cursor.getInt(2)",
+                        "SELECT * FROM $TABLE_DEFAULT_OPTION_FIELD WHERE defaultFieldId=$fieldId",
                         null
                     )
                     if (cursor2!!.moveToFirst()) {
@@ -346,11 +351,11 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
                     cursor2.close()
 
                     fields += Field(
-                        type = cursor.getString(2),
-                        label = cursor.getString(3),
-                        name = cursor.getString(4),
-                        required = cursor.getInt(5) == 1,
-                        uuid = cursor.getString(6),
+                        type = cursor.getString(6),
+                        label = cursor.getString(7),
+                        name = cursor.getString(8),
+                        required = cursor.getInt(9) == 1,
+                        uuid = cursor.getString(10),
                         options = options,
                         fieldId = cursor.getInt(0),
                         value = cursor.getString(3)
@@ -360,16 +365,14 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             cursor.close()
             db.close()
 
-            if (form != null) {
-                return Record(
-                    id = idForm,
-                    defaultFormId = defaultFormId,
-                    form = form.title,
-                    title = titleForm,
-                    sections = form.sections,
-                    fields = form.fields
-                )
-            }
+            return Record(
+                id = idForm,
+                defaultFormId = defaultFormId,
+                form = form.title,
+                title = titleForm,
+                sections = form.sections,
+                fields = form.fields
+            )
         }
         cursor.close()
         db.close()
@@ -378,20 +381,23 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
     }
 
     fun saveEntrie(record: Record): Record {
-        var savedRecord: Record = record
+        val savedRecord: Record = record
         val db = this.writableDatabase
+        val id = savedRecord.id
 
-        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_FORM WHERE id=record.id", null)
-        if (cursor!!.moveToFirst()) {
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_FORM WHERE id=$id", null)
+        cursor!!.moveToFirst()
+        if (cursor.getInt(0) == 0) {
 
             var values = ContentValues()
+            values.put(ID_FORM_DEFAULT_FORM, record.defaultFormId)
             values.put(TITLE_FORM, record.title)
-            val id = db.insert(TABLE_FORM, null, values)
+            val formId = db.insert(TABLE_FORM, null, values)
 
             record.fields?.forEach { field ->
 
                 values = ContentValues()
-                values.put(ID_FORM_FIELD, id)
+                values.put(ID_FORM_FIELD, formId)
                 values.put(ID_FIELD_FIELD, field.id)
                 values.put(VALUE_FIELD, field.value)
                 db.insert(TABLE_FIELD, null, values)
@@ -400,6 +406,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         } else {
 
             var values = ContentValues()
+            values.put(ID_FORM_DEFAULT_FORM, record.defaultFormId)
             values.put(TITLE_FORM, record.title)
             db.update(TABLE_FORM, values, "id=?", arrayOf(record.id.toString()))
 
