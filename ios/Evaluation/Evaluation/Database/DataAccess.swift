@@ -14,9 +14,6 @@ class DataAccess {
         let path = NSSearchPathForDirectoriesInDomains(
             .documentDirectory, .userDomainMask, true
         ).first!
-        
-        //print(path)
-        
         let name = "\(path)/db.sqlite3";
         return name;
     }
