@@ -109,7 +109,6 @@
 				74AE87EB2C5401370052EE61 /* EvaluationTests */,
 				74AE87F52C5401370052EE61 /* EvaluationUITests */,
 				74AE87D32C5401360052EE61 /* Products */,
-				AD9B0E39DE36079C98F8F65E /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -204,13 +203,6 @@
 				74FB62AE2C59A77700F378C7 /* PickerView.swift */,
 			);
 			path = Util;
-			sourceTree = "<group>";
-		};
-		AD9B0E39DE36079C98F8F65E /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
